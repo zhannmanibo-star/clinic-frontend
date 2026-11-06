@@ -50,3 +50,9 @@ export async function logout() {
   try { if (tokens?.refresh_token) await api('/auth/logout', {method:'POST',body:{refresh_token:tokens.refresh_token},auth:false}); }
   finally { clearSession(); }
 }
+// "Sign in with Google": sends the Google ID token to the backend, which verifies it and returns our own tokens.
+export async function googleLogin(credential) {
+  const result = await api('/auth/google', {method:'POST',body:{credential},auth:false});
+  saveTokens(result.tokens);
+  return result.user;
+}

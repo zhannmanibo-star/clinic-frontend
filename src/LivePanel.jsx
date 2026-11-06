@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { api } from './api';
+import ClinicMap, { CLINIC_ADDRESS } from './ClinicMap';
+import QrScanner from './QrScanner';
 import './live.css';
 
 /* -------------------------------------------------------------------------- */
@@ -16,6 +18,46 @@ const today = () =>
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
+
+// Optional: id of the shared "Calapan Clinic" Google Calendar, so staff can view it inside the portal.
+const CALENDAR_ID = import.meta.env?.VITE_GOOGLE_CALENDAR_ID || '';
+
+// A "Add to Google Calendar" link for a patient's ticket (works without any key or login on our side).
+function calendarLink(t) {
+  const mins = (s) => {
+    const [h, m] = String(s).split(':').map(Number);
+    return h * 60 + m;
+  };
+  const start = mins(t.estimated_time || t.start_time || '08:00');
+  const slot = Math.max(
+    10,
+    Math.floor((mins(t.end_time) - mins(t.start_time)) / Math.max(1, Number(t.max_slots) || 1))
+  );
+  const stamp = (m) =>
+    t.appointment_date.replaceAll('-', '') +
+    'T' +
+    String(Math.floor(m / 60) % 24).padStart(2, '0') +
+    String(m % 60).padStart(2, '0') +
+    '00';
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Clinic visit: ${t.doctor_name} (Queue #${t.queue_number})`,
+    dates: `${stamp(start)}/${stamp(start + slot)}`,
+    ctz: 'Asia/Manila',
+    details: `Calapan City Health Clinic. Queue number ${t.queue_number}. Bring your QR ticket.`,
+    location: CLINIC_ADDRESS,
+  });
+  return 'https://calendar.google.com/calendar/render?' + params.toString();
+}
+
+// One readable sentence for the result of a staff action (email reminders, calendar sync, ...)
+function describeResult(message, r) {
+  if ('sent' in r)
+    return `${message} Sent: ${r.sent}; queued: ${r.queued}; failed: ${r.failed}; skipped: ${r.skipped ?? 0}.`;
+  if ('schedules' in r)
+    return `${message} Added ${r.schedules} schedule event(s) and ${r.appointments} appointment event(s); ${r.still_missing} still missing.`;
+  return message || 'Saved.';
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Table                                                                     */
@@ -165,6 +207,8 @@ export default function LivePanel({ user, onLogout }) {
     'Records',
     ...(staff ? ['Patients', 'Doctors', 'Email log'] : []),
     ...(admin ? ['Users'] : []),
+    ...(!patient && CALENDAR_ID ? ['Calendar'] : []),
+    'Clinic map',
     ...(patient ? ['Profile'] : []),
   ];
 
@@ -182,6 +226,7 @@ export default function LivePanel({ user, onLogout }) {
   const [patientId, setPatientId] = useState('');
   const [ticket, setTicket] = useState(null);
   const [editor, setEditor] = useState(null);
+  const [scanning, setScanning] = useState(false);
 
   /* ---- Data loading (per page) ---- */
   useEffect(() => {
@@ -210,6 +255,8 @@ export default function LivePanel({ user, onLogout }) {
       } else if (page === 'Email log') {
         result = await api('/emails');
         extra = (await api('/doctors')).doctors;
+      } else if (page === 'Clinic map' || page === 'Calendar') {
+        result = {};
       } else if (page === 'Profile') {
         result = await api('/auth/me');
       } else if (page === 'Records') {
@@ -248,11 +295,7 @@ export default function LivePanel({ user, onLogout }) {
 
     try {
       const out = await api(path, { method, body });
-      setNotice(
-        out.result
-          ? `${out.message} Sent: ${out.result.sent}; queued: ${out.result.queued}; failed: ${out.result.failed}.`
-          : out.message || 'Saved.'
-      );
+      setNotice(out.result ? describeResult(out.message, out.result) : out.message || 'Saved.');
       setRevision((x) => x + 1);
       return true;
     } catch (e) {
@@ -430,6 +473,21 @@ export default function LivePanel({ user, onLogout }) {
                       />
                     </section>
                   )}
+
+                  {staff && page === 'Schedules' && (
+                    <section className="live-card">
+                      <h2>Google Calendar</h2>
+                      <p>
+                        New and changed schedules and bookings are added to the shared clinic
+                        calendar automatically. Press the button once to add anything that is
+                        still missing (for example, bookings made before Google Calendar was set
+                        up).
+                      </p>
+                      <button disabled={busy} onClick={() => mutate('/calendar/sync', 'POST', {})}>
+                        Sync with Google Calendar
+                      </button>
+                    </section>
+                  )}
                 </>
               )}
 
@@ -496,6 +554,11 @@ export default function LivePanel({ user, onLogout }) {
                           ]}
                           onSubmit={(v) => mutate('/queue/check-in', 'POST', v)}
                         />
+                        <p>
+                          <button disabled={busy} onClick={() => setScanning(true)}>
+                            Scan with camera
+                          </button>
+                        </p>
                       </section>
                     )}
 
@@ -574,6 +637,42 @@ export default function LivePanel({ user, onLogout }) {
                     }
                   />
                 </>
+              )}
+
+              {/* --------------------------- CLINIC MAP --------------------------- */}
+              {page === 'Clinic map' && (
+                <section className="live-card">
+                  <h2>Find the clinic</h2>
+                  <p>City Health Office, Calapan City Hall Compound, Calapan City, Oriental Mindoro</p>
+                  <ClinicMap />
+                </section>
+              )}
+
+              {/* ----------------------------- CALENDAR ----------------------------- */}
+              {page === 'Calendar' && CALENDAR_ID && (
+                <section className="live-card">
+                  <h2>Clinic calendar</h2>
+                  <p>
+                    Doctor schedules and queue numbers. If the calendar stays blank, sign in to
+                    Google with an account the clinic calendar is shared with.
+                  </p>
+                  <iframe
+                    className="live-calendar"
+                    title="Clinic Google Calendar"
+                    src={`https://calendar.google.com/calendar/embed?src=${encodeURIComponent(
+                      CALENDAR_ID
+                    )}&ctz=Asia%2FManila&mode=WEEK`}
+                  />
+                  <p>
+                    <a
+                      href={`https://calendar.google.com/calendar/u/0?cid=${btoa(CALENDAR_ID).replace(/=+$/, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open in Google Calendar ↗
+                    </a>
+                  </p>
+                </section>
               )}
 
               {/* ---------------------------- PROFILE ---------------------------- */}
@@ -655,6 +754,29 @@ export default function LivePanel({ user, onLogout }) {
                     Email delivery depends on the backend mail configuration. This view shows
                     the recorded status.
                   </p>
+
+                  <section className="live-card">
+                    <h2>Appointment reminders</h2>
+                    <p>
+                      Emails every patient who still has an appointment on the chosen day. Patients
+                      who were already reminded are skipped, so it is safe to press twice.
+                    </p>
+                    <Form
+                      busy={busy}
+                      label="Send reminders"
+                      fields={[
+                        {
+                          name: 'date',
+                          type: 'date',
+                          required: false,
+                          label: 'Appointment date (leave empty for tomorrow)',
+                        },
+                      ]}
+                      onSubmit={(v) =>
+                        mutate('/emails/reminders', 'POST', v.date ? { date: v.date } : {})
+                      }
+                    />
+                  </section>
 
                   <section className="live-card">
                     <h2>Email a doctor</h2>
@@ -782,6 +904,33 @@ export default function LivePanel({ user, onLogout }) {
               <QRCodeSVG value={ticket.qr_code} size={200} marginSize={4} />
               <p className="live-qr-text">{ticket.qr_code}</p>
               <p>Show this ticket at the clinic. Status: {ticket.ticket_status}</p>
+              <p>
+                <a href={calendarLink(ticket)} target="_blank" rel="noreferrer">
+                  Add to Google Calendar ↗
+                </a>
+              </p>
+            </section>
+          </div>
+        )}
+
+        {/* ======================== QR SCANNER DIALOG ======================== */}
+        {scanning && (
+          <div className="live-overlay">
+            <section
+              className="live-card live-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Scan QR ticket"
+            >
+              <button onClick={() => setScanning(false)}>Close</button>
+              <h2>Scan QR ticket</h2>
+              <p>Point the camera at the patient's QR ticket.</p>
+              <QrScanner
+                onScan={(text) => {
+                  setScanning(false);
+                  mutate('/queue/check-in', 'POST', { qr_code: text });
+                }}
+              />
             </section>
           </div>
         )}

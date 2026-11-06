@@ -1,13 +1,12 @@
-// Place your own files in public/images/, then enter their URLs below.
-// Example: logo: '/images/clinic-logo.png'
-// Keep a value empty to show the placeholder instead.
+// Drop your photos into public/images/ using these exact file names.
+// If a file is missing, the site falls back to the placeholder automatically.
 export const ASSETS = {
-  logo: '',
-  hero: '',
-  service1: '',
-  service2: '',
-  service3: '',
-  records: '',
+  logo: '',                          // add your clinic logo, e.g. '/images/clinic-logo.png'
+  hero: '/images/hero.jpg',          // doctor speaking with a patient
+  service1: '/images/service1.jpg',  // general medicine consultation
+  service2: '/images/service2.jpg',  // pediatrics: doctor with a child
+  service3: '/images/service3.jpg',  // maternal & OB-GYN: prenatal checkup
+  records: '/images/records.jpg',    // staff handling patient records
   map: '',
-  reception: '',
+  reception: '/images/reception.jpg',// clinic reception desk
 };

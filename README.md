@@ -27,12 +27,24 @@ For production, configure VITE_API_URL to your HTTPS API base URL ending in /api
 
 The landing layout is retained. `src/LivePanel.jsx` is the active API-backed workspace after login, using the landing page's navy/coral palette. Original PatientPanel and StaffPanel components and preview entries are retained only as design references. `src/main.jsx` now starts App, not PatientPreview. Their sample data is never used by the live workspace.
 
-No camera QR scanner, password reset, Google sign-in, certificate generation, deletion UI, or calendar sync is implemented here. Manual QR text check-in is available. Email delivery requires backend mail configuration; a queued response does not mean delivered. Landing-page marketing details and public sample schedule remain illustrative and labelled; signed-in schedules come from the API.
+Password reset, certificate generation and a deletion UI are not implemented. Manual QR text check-in is still available next to the camera scanner. Email delivery requires backend mail configuration; a queued response does not mean delivered. Landing-page marketing details and public sample schedule remain illustrative and labelled; signed-in schedules come from the API.
+
+## The 5 integrations (frontend side)
+
+| Integration | Where | Needs in this folder's `.env` |
+|---|---|---|
+| Google login | "Sign in with Google" button under the login/register form (`GoogleLoginButton.jsx`) | `VITE_GOOGLE_CLIENT_ID` |
+| Email (Brevo) | Staff > Email log: "Appointment reminders" and "Email a doctor" | nothing (keys live in the backend) |
+| QR code | Patient ticket (drawn with `qrcode.react`); staff Queue > "Scan with camera" (`QrScanner.jsx`, `html5-qrcode`) | nothing. The camera needs https:// or localhost |
+| Google Maps | Landing page "Find the clinic" and a "Clinic map" tab after login (`ClinicMap.jsx`) | `VITE_GOOGLE_MAPS_API_KEY` (optional: without it a plain Google embed is used) |
+| Google Calendar | Staff > Schedules > "Sync with Google Calendar"; patient ticket > "Add to Google Calendar"; optional staff "Calendar" tab | `VITE_GOOGLE_CALENDAR_ID` (optional, only for the in-portal calendar tab) |
+
+After editing `.env`, restart `npm run dev`. On Vercel, add the same `VITE_...` variables under Project Settings > Environment Variables and redeploy.
 
 ## Verification
 
 `npm run build` — production compilation.
-`npm test` — seven mocked HTTP tests: login payload, rejected credentials, concurrent refresh, expired refresh, logout, non-JSON error handling, and booking payload.
+`npm test` — nine mocked HTTP tests: login payload, rejected credentials, concurrent refresh, expired refresh, logout, non-JSON error handling, booking payload, and Google login (accepted and rejected).
 
 Backend endpoint/field contracts were inspected in the supplied PHP source. An end-to-end connection to your running WAMP/Aiven database was not available in the editing environment. Browser visual testing was not completed here. Test locally in this order:
 

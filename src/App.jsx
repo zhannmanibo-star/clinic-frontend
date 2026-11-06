@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ASSETS } from './assets';
 import LivePanel from './LivePanel';
+import GoogleLoginButton from './GoogleLoginButton';
+import ClinicMap from './ClinicMap';
 import { api, login, logout, restoreSession, clearSession } from './api';
 
 /* -------------------------------------------------------------------------- */
@@ -84,7 +86,8 @@ function Icon({ name = 'cross', size = 20 }) {
 // Add your own image URLs in src/assets.js when ready.
 function Photo({ file, box, alt, className = '' }) {
   const [, , w, h] = box;
-  const imageUrl = ASSETS[file];
+  const [failed, setFailed] = useState(false);
+  const imageUrl = failed ? '' : ASSETS[file];
 
   return (
     <div
@@ -92,7 +95,7 @@ function Photo({ file, box, alt, className = '' }) {
       style={{ aspectRatio: `${w}/${h}` }}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={alt} />
+        <img src={imageUrl} alt={alt} onError={() => setFailed(true)} />
       ) : (
         <div className="placeholder-label">
           <span>YOUR IMAGE</span>
@@ -448,6 +451,18 @@ export default function App() {
                 </button>
               </form>
 
+              <div className="or-divider" aria-hidden="true">
+                <span>or</span>
+              </div>
+              <GoogleLoginButton
+                text={isRegister ? 'signup_with' : 'signin_with'}
+                onSuccess={(u) => {
+                  setNotice('');
+                  setUser(u);
+                }}
+                onError={(e) => setNotice(e.message)}
+              />
+
               {notice && (
                 <div className="notice" role="alert">
                   {notice}
@@ -797,20 +812,7 @@ export default function App() {
                 </small>
               </div>
 
-              <a
-                className="map-link"
-                href="https://www.google.com/maps/search/?api=1&query=City+Health+and+Sanitation+Department+Calapan+City"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open clinic location in Google Maps"
-              >
-                <Photo
-                  file="map"
-                  box={[527, 91, 354, 355]}
-                  alt="Map showing the City Health and Sanitation Department in Calapan"
-                />
-                <span>Open in Google Maps ↗</span>
-              </a>
+              <ClinicMap />
             </section>
 
             {/* ---------------------------- CTA ---------------------------- */}
