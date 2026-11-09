@@ -66,3 +66,13 @@ Backend endpoint/field contracts were inspected in the supplied PHP source. An e
 - Empty schedules: create one in the staff/admin portal.
 
 Tokens are stored in sessionStorage for this browser tab; passwords are not saved. Sign out on shared computers. No Aiven password, JWT signing secret or CA certificate belongs in the frontend.
+
+## Workspace design (all roles)
+
+`src/LivePanel.jsx` loads data and runs actions; the screens live in `src/panels/`:
+
+- `PatientViews.jsx` — dashboard, book a visit (doctor, date, session), my appointments, QR ticket with visit progress, visit records, profile.
+- `DoctorViews.jsx` — My patients (today's patients / patient records), visit history and notes. `DocumentPrint.jsx` — medical certificate, referral letter and prescription with a saved e-signature and browser print / Save as PDF.
+- `StaffViews.jsx` — staff and admin dashboard, appointments, queue management, public queue display (self-refreshing), schedules, email and users.
+- Only admins can create doctor and staff accounts (Users > Create account). Staff can still add patients.
+- Vitals, lab results and a recent-activity feed from the design mock-ups are not shown because the backend has no endpoints for them.
