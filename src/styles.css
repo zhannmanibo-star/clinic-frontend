@@ -12,7 +12,7 @@
 .placeholder-label>span{font-size:12px;font-weight:700;letter-spacing:2px}
 .placeholder-label>small{font-size:11px;color:inherit;max-width:220px}
 .hero-photo.image-placeholder,.cta .image-placeholder{background:#254b6c;border-color:#55728b;color:#b6c8da}
-.logo{border:1px dashed #8fa5b7;border-radius:9px;background:#f3f6f8;color:#537089;overflow:hidden;font-size:7px;text-align:center;line-height:1.3;flex-shrink:0}
+.logo{border:1px transparent #8fa5b7;border-radius:9px;background:#f3f6f8;color:#537089;overflow:hidden;font-size:7px;text-align:center;line-height:1.3;flex-shrink:0}
 .logo img{width:100%;height:100%;object-fit:contain;background:transparent}
 .hero-photo.has-image img{height:100%!important;top:0!important}
 

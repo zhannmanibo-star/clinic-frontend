@@ -238,60 +238,185 @@ export function MyAppointments({ rows = [], onView, action }) {
 }
 
 /* ================================ QR TICKET ================================ */
+/* ================================ QR TICKET ================================ */
 const STEPS = [
   ['Booked', 'Confirmation email sent'],
   ['Checked in', 'Staff scans your QR at the door'],
   ['Serving', 'Watch the queue board'],
   ['Completed', 'Visit notes saved to your record'],
 ];
-const stepIndex = (s) => ({ issued: 0, waiting: 1, called: 2, served: 3 }[String(s)] ?? 0);
 
-export function QrTicket({ rows = [], selected, setSelected, user, go }) {
-  const tickets = rows.filter(ACTIVE).sort((a, b) => String(a.appointment_date).localeCompare(String(b.appointment_date)));
-  const t = tickets.find((x) => String(x.id) === String(selected)) || tickets.find((x) => x.ticket_status !== 'served') || tickets[0];
-  if (!t) return <Empty>You have no active QR ticket. Book a visit to get one.</Empty>;
+const stepIndex = (s) =>
+  ({ issued: 0, waiting: 1, called: 2, served: 3 }[String(s)] ?? 0);
+
+export function QrTicket({
+  rows = [],
+  selected,
+  setSelected,
+  user,
+  go,
+}) {
+  const tickets = rows
+    .filter(ACTIVE)
+    .sort((a, b) =>
+      String(a.appointment_date).localeCompare(String(b.appointment_date))
+    );
+
+  const t =
+    tickets.find((x) => String(x.id) === String(selected)) ||
+    tickets.find((x) => x.ticket_status !== 'served') ||
+    tickets[0];
+
+  if (!t) {
+    return (
+      <Empty>
+        You have no active QR ticket. Book a visit to get one.
+      </Empty>
+    );
+  }
+
   const step = stepIndex(t.ticket_status);
 
   return (
     <>
       {tickets.length > 1 && (
-        <label className="live-filter">Ticket{' '}
-          <select value={t.id} onChange={(e) => setSelected(e.target.value)}>
-            {tickets.map((x) => <option key={x.id} value={x.id}>{fmtDate(x.appointment_date)} · {x.doctor_name} · {x.queue_number}</option>)}
+        <label className="live-filter print-hide">
+          Ticket{' '}
+          <select
+            value={t.id}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            {tickets.map((x) => (
+              <option key={x.id} value={x.id}>
+                {fmtDate(x.appointment_date)} · {x.doctor_name} ·{' '}
+                {x.queue_number}
+              </option>
+            ))}
           </select>
         </label>
       )}
-      <div className="g2b">
+
+      <div className="g2b qr-ticket-print">
         <div className="pc">
-          <span className="lbl" style={{ display: 'flex', justifyContent: 'space-between' }}>Queue number <Pill status={t.status} /></span>
-          <div className="big" style={{ fontSize: 72, color: 'var(--coral)' }}>{String(t.queue_number ?? '—').replace('-', '–')}</div>
-          <div className="row3 kvg">
-            <div><span className="lbl">Patient</span><b>{user.name}</b></div>
-            <div><span className="lbl">Doctor</span><b>{t.doctor_name}</b></div>
-            <div><span className="lbl">Date</span><b>{fmtDate(t.appointment_date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</b></div>
-            <div><span className="lbl">Estimated time</span><b>{fmtTime(t.estimated_time)}</b></div>
-            <div><span className="lbl">Ticket status</span><b>{title(t.ticket_status || 'issued')}</b></div>
-            <div><span className="lbl">Appointment</span><b>#{t.id}</b></div>
+          <span
+            className="lbl"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+            }}
+          >
+            Queue number
+            <Pill status={t.status} />
+          </span>
+
+          <div
+            className="big"
+            style={{ fontSize: 72, color: 'var(--coral)' }}
+          >
+            {String(t.queue_number ?? '—').replace('-', '–')}
           </div>
+
+          <div className="row3 kvg">
+            <div>
+              <span className="lbl">Patient</span>
+              <b>{user.name}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Doctor</span>
+              <b>{t.doctor_name}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Date</span>
+              <b>
+                {fmtDate(t.appointment_date, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </b>
+            </div>
+
+            <div>
+              <span className="lbl">Estimated time</span>
+              <b>{fmtTime(t.estimated_time)}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Ticket status</span>
+              <b>{title(t.ticket_status || 'issued')}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Appointment</span>
+              <b>#{t.id}</b>
+            </div>
+          </div>
+
           <div className="btns print-hide">
-            <a className="btn" href={calendarLink(t)} target="_blank" rel="noreferrer">Add to Google Calendar</a>
-            <button onClick={() => go('Appointments')}>My appointments</button>
-            <button onClick={() => window.print()}>Print ticket</button>
+            <a
+              className="btn"
+              href={calendarLink(t)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Add to Google Calendar
+            </a>
+
+            <button
+              type="button"
+              onClick={() => go('Appointments')}
+            >
+              My appointments
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.print()}
+            >
+              Print ticket
+            </button>
           </div>
         </div>
 
         <div>
           <div className="pc qrw">
-            <div className="qrb"><QRCodeSVG value={t.qr_code} size={190} marginSize={2} /></div>
+            <div className="qrb">
+              <QRCodeSVG
+                value={t.qr_code}
+                size={190}
+                marginSize={4}
+              />
+            </div>
+
             <h2>Show this at the check-in counter</h2>
-            <p className="hint">Staff scan it to move your ticket from waiting to serving.</p>
-            <p className="live-qr-text qrtext">{t.qr_code}</p>
+
+            <p className="hint">
+              Staff scan it to move your ticket from waiting to serving.
+            </p>
+
+            <p className="live-qr-text qrtext">
+              {t.qr_code}
+            </p>
           </div>
-          <div className="pc print-hide" style={{ marginTop: 22 }}>
+
+          <div
+            className="pc print-hide"
+            style={{ marginTop: 22 }}
+          >
             <h2>Visit progress</h2>
+
             <div className="tl" style={{ marginTop: 16 }}>
-              {STEPS.map(([a, b], i) => (
-                <div key={a} className={i <= step ? 'on' : ''}><b>{a}</b>{b}</div>
+              {STEPS.map(([heading, description], i) => (
+                <div
+                  key={heading}
+                  className={i <= step ? 'on' : ''}
+                >
+                  <b>{heading}</b>
+                  {description}
+                </div>
               ))}
             </div>
           </div>
@@ -300,7 +425,6 @@ export function QrTicket({ rows = [], selected, setSelected, user, go }) {
     </>
   );
 }
-
 /* ================================== PROFILE ================================== */
 export function ProfileView({ data, busy, revision, onSave }) {
   const p = data.patient_profile || {};

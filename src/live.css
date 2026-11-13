@@ -285,11 +285,58 @@
 .live-shell .pad img{display:block;margin:0 auto}
 .live-shell .fg input,.live-shell .fg select{font:inherit;font-size:14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);width:100%}
 .live-shell .tl .linkbtn{display:inline-block;margin-top:4px}
-@media print{
-  body *{visibility:hidden}
-  .live-shell .paper,.live-shell .paper *{visibility:visible}
-  .live-shell .paper{position:absolute;left:0;top:0;width:100%;border:0;margin:0;border-radius:0}
-  .live-shell .print-hide{display:none!important}
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .live-shell .paper,
+  .live-shell .paper *,
+  .live-shell .qr-ticket-print,
+  .live-shell .qr-ticket-print * {
+    visibility: visible;
+  }
+
+  .live-shell .paper,
+  .live-shell .qr-ticket-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: white;
+    box-sizing: border-box;
+  }
+
+  .live-shell .qr-ticket-print {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .live-shell .qr-ticket-print .pc {
+    padding: 18px;
+    background: white;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .live-shell .qr-ticket-print .qrb svg {
+    display: block;
+    width: 190px;
+    height: 190px;
+    max-width: 100%;
+    margin: auto;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .live-shell .print-hide {
+    display: none !important;
+  }
 }
 
 @media(max-width:1450px){.live-shell .live-desk{display:none}}
