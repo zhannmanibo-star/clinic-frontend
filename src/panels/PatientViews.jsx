@@ -379,3 +379,46 @@ export function QrTicket({ rows = [], selected, setSelected, user, go }) {
     </>
   );
 }
+
+/* ================================== PROFILE ================================== */
+export function ProfileView({ data, busy, revision, onSave }) {
+  const p = data.patient_profile || {};
+  const rows = [['Email', data.user.email], ['Contact number', p.contact_no], ['Sex', p.sex], ['Birthdate', p.birthdate ? fmtDate(p.birthdate) : null], ['Address', p.address]];
+  return (
+    <div className="g2">
+      <div className="pc">
+        <div className="pfa">
+          <span className="live-avatar lg">{initials(data.user.name)}</span>
+          <div><b style={{ fontSize: 20 }}>{data.user.name}</b><div className="hint">Patient</div></div>
+        </div>
+        {rows.map(([k, v]) => <div className="sum" key={k}>{k}<b>{v || '—'}</b></div>)}
+        <p className="soft" style={{ textAlign: 'left', marginTop: 14 }}>Your records are visible only to you, the doctor you consulted and authorized clinic staff.</p>
+      </div>
+      <div className="pc">
+        <h2>Personal information</h2>
+        <p className="hint" style={{ marginBottom: 18 }}>Keep this updated so reminders and queue tickets reach you.</p>
+        <Form key={revision} busy={busy} initial={{ ...p, name: data.user.name }} fields={profileFields} onSubmit={onSave} />
+      </div>
+    </div>
+  );
+}
+
+/* ============================== VISIT RECORDS ============================== */
+export function VisitRecords({ rows = [] }) {
+  if (!rows.length) return <Empty>No visit records yet.</Empty>;
+  return (
+    <div className="pc">
+      <h2>Visit history</h2>
+      <p className="hint">Diagnosis and what was advised at each visit.</p>
+      <div className="tl" style={{ marginTop: 20 }}>
+        {rows.map((v, i) => (
+          <div key={v.id} className={i ? '' : 'on'}>
+            <b>{v.diagnosis || 'Consultation'}{i === 0 && <span className="late">LATEST</span>}</b>
+            <small>{fmtDate(v.visit_date)} · {v.doctor_name}</small>
+            {v.notes && <p>{v.notes}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
