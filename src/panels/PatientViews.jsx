@@ -244,103 +244,138 @@ const STEPS = [
   ['Serving', 'Watch the queue board'],
   ['Completed', 'Visit notes saved to your record'],
 ];
-const stepIndex = (s) => ({ issued: 0, waiting: 1, called: 2, served: 3 }[String(s)] ?? 0);
+
+const stepIndex = (s) =>
+  ({ issued: 0, waiting: 1, called: 2, served: 3 }[String(s)] ?? 0);
 
 export function QrTicket({ rows = [], selected, setSelected, user, go }) {
-  const tickets = rows.filter(ACTIVE).sort((a, b) => String(a.appointment_date).localeCompare(String(b.appointment_date)));
-  const t = tickets.find((x) => String(x.id) === String(selected)) || tickets.find((x) => x.ticket_status !== 'served') || tickets[0];
-  if (!t) return <Empty>You have no active QR ticket. Book a visit to get one.</Empty>;
+  const tickets = rows
+    .filter(ACTIVE)
+    .sort((a, b) => String(a.appointment_date).localeCompare(String(b.appointment_date)));
+
+  const t =
+    tickets.find((x) => String(x.id) === String(selected)) ||
+    tickets.find((x) => x.ticket_status !== 'served') ||
+    tickets[0];
+
+  if (!t) {
+    return <Empty>You have no active QR ticket. Book a visit to get one.</Empty>;
+  }
+
   const step = stepIndex(t.ticket_status);
 
   return (
     <>
       {tickets.length > 1 && (
-        <label className="live-filter">Ticket{' '}
+        <label className="live-filter print-hide">
+          Ticket{' '}
           <select value={t.id} onChange={(e) => setSelected(e.target.value)}>
-            {tickets.map((x) => <option key={x.id} value={x.id}>{fmtDate(x.appointment_date)} · {x.doctor_name} · {x.queue_number}</option>)}
+            {tickets.map((x) => (
+              <option key={x.id} value={x.id}>
+                {fmtDate(x.appointment_date)} · {x.doctor_name} · {x.queue_number}
+              </option>
+            ))}
           </select>
         </label>
       )}
-      <div className="g2b">
+
+      <div className="g2b qr-ticket-print">
         <div className="pc">
-          <span className="lbl" style={{ display: 'flex', justifyContent: 'space-between' }}>Queue number <Pill status={t.status} /></span>
-          <div className="big" style={{ fontSize: 72, color: 'var(--coral)' }}>{String(t.queue_number ?? '—').replace('-', '–')}</div>
-          <div className="row3 kvg">
-            <div><span className="lbl">Patient</span><b>{user.name}</b></div>
-            <div><span className="lbl">Doctor</span><b>{t.doctor_name}</b></div>
-            <div><span className="lbl">Date</span><b>{fmtDate(t.appointment_date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</b></div>
-            <div><span className="lbl">Estimated time</span><b>{fmtTime(t.estimated_time)}</b></div>
-            <div><span className="lbl">Checkup window</span><b>{fmtWindow(t.estimated_time)}</b></div>
-            <div><span className="lbl">Ticket status</span><b>{title(t.ticket_status || 'issued')}</b></div>
-            <div><span className="lbl">Appointment</span><b>#{t.id}</b></div>
+          <span className="lbl" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            Queue number
+            <Pill status={t.status} />
+          </span>
+
+          <div className="big" style={{ fontSize: 72, color: 'var(--coral)' }}>
+            {String(t.queue_number ?? '—').replace('-', '–')}
           </div>
+
+          <div className="row3 kvg">
+            <div>
+              <span className="lbl">Patient</span>
+              <b>{user.name}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Doctor</span>
+              <b>{t.doctor_name}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Date</span>
+              <b>
+                {fmtDate(t.appointment_date, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </b>
+            </div>
+
+            <div>
+              <span className="lbl">Estimated time</span>
+              <b>{fmtTime(t.estimated_time)}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Checkup window</span>
+              <b>{fmtWindow(t.estimated_time)}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Ticket status</span>
+              <b>{title(t.ticket_status || 'issued')}</b>
+            </div>
+
+            <div>
+              <span className="lbl">Appointment</span>
+              <b>#{t.id}</b>
+            </div>
+          </div>
+
           <div className="btns print-hide">
-            <a className="btn" href={calendarLink(t)} target="_blank" rel="noreferrer">Add to Google Calendar</a>
-            <button onClick={() => go('Appointments')}>My appointments</button>
-            <button onClick={() => window.print()}>Print ticket</button>
+            <a className="btn" href={calendarLink(t)} target="_blank" rel="noreferrer">
+              Add to Google Calendar
+            </a>
+
+            <button type="button" onClick={() => go('Appointments')}>
+              My appointments
+            </button>
+
+            <button type="button" onClick={() => window.print()}>
+              Print ticket
+            </button>
           </div>
         </div>
 
         <div>
           <div className="pc qrw">
-            <div className="qrb"><QRCodeSVG value={t.qr_code} size={190} marginSize={2} /></div>
+            <div className="qrb">
+              <QRCodeSVG value={t.qr_code} size={190} marginSize={4} />
+            </div>
+
             <h2>Show this at the check-in counter</h2>
+
             <p className="hint">Staff scan it to move your ticket from waiting to serving.</p>
+
             <p className="live-qr-text qrtext">{t.qr_code}</p>
           </div>
+
           <div className="pc print-hide" style={{ marginTop: 22 }}>
             <h2>Visit progress</h2>
+
             <div className="tl" style={{ marginTop: 16 }}>
-              {STEPS.map(([a, b], i) => (
-                <div key={a} className={i <= step ? 'on' : ''}><b>{a}</b>{b}</div>
+              {STEPS.map(([heading, description], i) => (
+                <div key={heading} className={i <= step ? 'on' : ''}>
+                  <b>{heading}</b>
+                  {description}
+                </div>
               ))}
             </div>
           </div>
         </div>
       </div>
     </>
-  );
-}
-
-/* ================================== PROFILE ================================== */
-export function ProfileView({ data, busy, revision, onSave }) {
-  const p = data.patient_profile || {};
-  const rows = [['Email', data.user.email], ['Contact number', p.contact_no], ['Sex', p.sex], ['Birthdate', p.birthdate ? fmtDate(p.birthdate) : null], ['Address', p.address]];
-  return (
-    <div className="g2">
-      <div className="pc">
-        <div className="pfa">
-          <span className="live-avatar lg">{initials(data.user.name)}</span>
-          <div><b style={{ fontSize: 20 }}>{data.user.name}</b><div className="hint">Patient</div></div>
-        </div>
-        {rows.map(([k, v]) => <div className="sum" key={k}>{k}<b>{v || '—'}</b></div>)}
-        <p className="soft" style={{ textAlign: 'left', marginTop: 14 }}>Your records are visible only to you, the doctor you consulted and authorized clinic staff.</p>
-      </div>
-      <div className="pc">
-        <h2>Personal information</h2>
-        <p className="hint" style={{ marginBottom: 18 }}>Keep this updated so reminders and queue tickets reach you.</p>
-        <Form key={revision} busy={busy} initial={{ ...p, name: data.user.name }} fields={profileFields} onSubmit={onSave} />
-      </div>
-    </div>
-  );
-}
-
-/* ============================== VISIT RECORDS ============================== */
-export function VisitRecords({ rows = [] }) {
-  if (!rows.length) return <Empty>No visit records yet.</Empty>;
-  return (
-    <div className="pc">
-      <h2>Visit history</h2>
-      <p className="hint">Diagnosis and what was advised at each visit.</p>
-      <div className="tl" style={{ marginTop: 20 }}>
-        {rows.map((v, i) => (
-          <div key={v.id} className={i ? '' : 'on'}>
-            <b>{v.diagnosis || 'Consultation'}{i === 0 && <span className="late">LATEST</span>}</b>
-            <small>{fmtDate(v.visit_date)} · {v.doctor_name}</small>
-            {v.notes && <p>{v.notes}</p>}
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
