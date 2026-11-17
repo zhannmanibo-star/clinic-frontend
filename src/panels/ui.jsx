@@ -29,6 +29,20 @@ export const fmtTime = (t) => {
 
 export const calendarLink = buildCalendarLink;
 
+// A rounded-to-the-hour window around an exact estimate, e.g. "10:24" -> "10 – 11 AM".
+// Friendlier for a printed ticket than one exact minute, which can look overly precise.
+export const fmtWindow = (t) => {
+  if (!t) return '—';
+  const [h] = String(t).split(':').map(Number);
+  if (Number.isNaN(h)) return String(t);
+  const label = (hour) => `${((hour + 11) % 12) + 1}`;
+  const period = (hour) => (hour >= 12 ? 'PM' : 'AM');
+  const nextHour = (h + 1) % 24;
+  return period(h) === period(nextHour)
+    ? `${label(h)} – ${label(nextHour)} ${period(h)}`
+    : `${label(h)} ${period(h)} – ${label(nextHour)} ${period(nextHour)}`;
+};
+
 const STATUS_CLASS = {
   confirmed: 'cf', pending: 'wt', completed: 'cp', served: 'cp', cancelled: 'cx', skipped: 'cx',
   called: 'sv', waiting: 'wt', issued: 'ci', open: 'cf', closed: 'cp', full: 'cp',

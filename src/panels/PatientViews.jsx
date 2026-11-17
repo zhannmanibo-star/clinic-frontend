@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { CLINIC_ADDRESS } from '../ClinicMap';
-import { Pill, Seg, Stat, Empty, Form, profileFields, title, fmtDate, fmtTime, initials, calendarLink } from './ui';
+import { Pill, Seg, Stat, Empty, Form, profileFields, title, fmtDate, fmtTime, fmtWindow, initials, calendarLink } from './ui';
 
 const ACTIVE = (a) => a.qr_code && a.status !== 'cancelled';
 
@@ -270,6 +270,7 @@ export function QrTicket({ rows = [], selected, setSelected, user, go }) {
             <div><span className="lbl">Doctor</span><b>{t.doctor_name}</b></div>
             <div><span className="lbl">Date</span><b>{fmtDate(t.appointment_date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</b></div>
             <div><span className="lbl">Estimated time</span><b>{fmtTime(t.estimated_time)}</b></div>
+            <div><span className="lbl">Checkup window</span><b>{fmtWindow(t.estimated_time)}</b></div>
             <div><span className="lbl">Ticket status</span><b>{title(t.ticket_status || 'issued')}</b></div>
             <div><span className="lbl">Appointment</span><b>#{t.id}</b></div>
           </div>
